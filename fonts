@@ -1,0 +1,105 @@
+#生成随机颜色背景，随机颜色文字的图片
+
+from PIL import Image,ImageDraw,ImageFile,ImageFont
+import random
+import os
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
+def hotkeys():
+    options = webdriver.ChromeOptions()
+    options.add_argument("start-maximized")
+    options.add_argument('disable-infobars')
+    driver=webdriver.Chrome(chrome_options=options, executable_path= r"E:\chromedriver\chromedriver.exe")
+#driver.get("https://trends.google.com/trends/trendingsearches/realtime?geo=AR&category=all")
+    driver.get("https://trends.google.com/trends/trendingsearches/daily?geo=US")
+    myLength = len(WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located((By.XPATH, "//div[@class='title']"))))
+
+    textsave=open("textsave.txt","w")
+
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")   #for scrolling down
+        try:
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//div[@class='feed-load-more-button'][@ng-click=\"ctrl.loadMoreFeedItems()\"]"))).click()
+            WebDriverWait(driver, 20).until(lambda driver: len(driver.find_elements_by_xpath("//div[@class='title']")) > myLength)
+            titles = driver.find_elements_by_xpath("//div[@class='title']")
+            myLength = len(titles)
+        except TimeoutException:
+            break
+
+    for title in titles:
+        #print(title.text)
+        textsave.write(title.text+"\n")
+    #print(len(titles))
+    driver.quit()
+    textsave.close()
+    
+    
+def randomcolor():
+    colorArr = ['1','2','3','4','5','6','7','8','9','A','B','C','D','E','F']
+    color = ""
+    for i in range(6):
+        color += colorArr[random.randint(0,14)]
+    return "#"+color
+
+def del_files(path):
+    for root,dirs,files in os.walk(path):
+        for name in files:
+            if name.endswith(".jpg"):
+                os.remove(os.path.join(root,name))
+
+
+def randomfont(size):
+    font1= ImageFont.truetype('C:\\Users\\enxia\\Downloads\\fonts\\Black_And_White_Picture\\BlackAndWhitePicture-Regular.TTf',size)#小字体
+    font2= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Courgette\\Courgette-Regular.TTf", size)#小字体
+    font3= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Fredericka_the_Great\\FrederickatheGreat-Regular.TTf", size)#中字体
+    font4= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Great_Vibes\\GreatVibes-Regular.TTf", size)#中字体
+    font5= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Herr_Von_Muellerhoff\\HerrVonMuellerhoff-Regular.TTf", size)#大字体
+    font6= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Monoton\\Monoton-Regular.TTf", size)#大字体
+    font7= ImageFont.truetype("C:\\Users\\enxia\\Downloads\\fonts\\Press_Start_2P\\PressStart2P-Regular.TTf", size)#大字体
+    fontlist=[font1,font2,font3,font4,font5,font6,font7]
+
+    ft=fontlist[random.randint(0,6)]
+    return(ft)
+    
+def pictures():
+    #hotkeys()
+    
+    with open("textsave.txt","r")as f:
+        data= f.readlines()
+        i=0
+
+        for line in data:
+            words=line.split()      #word 列表
+            im=Image.new("RGB",(8000,8000),randomcolor())
+            draw_image = ImageDraw.Draw(im)
+        #draw = ImageDraw.Draw(im)  
+            ft0=randomfont(500)
+            sz=draw_image.textsize(line,font=ft0)#为标准，不变
+            
+            if sz[0] >= 8000:  #字数多的情况，选用小字体
+                ft1=randomfont(300)
+                sz1=draw_image.textsize(line,font=ft1)
+                draw_image.text((int(8000/2-sz1[0]/2),3000),line,font=ft1,fill=randomcolor())
+            elif sz[0]>=4000: #字数中等情况，选中中等字体
+                ft2=randomfont(500)
+                sz2=draw_image.textsize(line,font=ft2)
+                draw_image.text((int(8000/2-sz2[0]/2),3000),line,font=ft2,fill=randomcolor())
+            else:#字数少的情况，选大字体
+                ft3=randomfont(600)
+                sz3=draw_image.textsize(line,font=ft3)
+                draw_image.text((int(8000/2-sz3[0]/2),3000),line,font=ft3,fill=randomcolor())
+            i=i+1
+            #im.convert(mode="L")
+            im.save(str(i)+"{file_name}.jpg".format(file_name=words[0]))
+        print(i)
+   
+
+if __name__=="__main__":
+    path=r"C:\Users\enxia\Pictures\Artist-make"
+    del_files(path)
+    pictures()
