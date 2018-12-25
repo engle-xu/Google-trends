@@ -1,0 +1,37 @@
+#功能：下载Google trends的热点词
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
+def hotkeys():
+    options = webdriver.ChromeOptions()
+    options.add_argument("start-maximized")
+    options.add_argument('disable-infobars')
+    driver=webdriver.Chrome(chrome_options=options, executable_path= r"E:\chromedriver\chromedriver.exe")
+#driver.get("https://trends.google.com/trends/trendingsearches/realtime?geo=AR&category=all")
+    driver.get("https://trends.google.com/trends/trendingsearches/daily?geo=US")
+    myLength = len(WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located((By.XPATH, "//div[@class='title']"))))
+
+    textsave=open("textsave.txt","w")
+
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")   #for scrolling down
+        try:
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//div[@class='feed-load-more-button'][@ng-click=\"ctrl.loadMoreFeedItems()\"]"))).click()
+            WebDriverWait(driver, 20).until(lambda driver: len(driver.find_elements_by_xpath("//div[@class='title']")) > myLength)
+            titles = driver.find_elements_by_xpath("//div[@class='title']")
+            myLength = len(titles)
+        except TimeoutException:
+            break
+
+    for title in titles:
+        print(title.text)
+        textsave.write(title.text+"\n")
+    print(len(titles))
+    driver.quit()
+    textsave.close()
+
+
+hotkeys()
